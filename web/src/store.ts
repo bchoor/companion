@@ -18,6 +18,12 @@ interface AppState {
   streamingStartedAt: Map<string, number>;
   streamingOutputTokens: Map<string, number>;
 
+  // Accumulated token counts per session (summed across all turns)
+  sessionTokensIn: Map<string, number>;
+  sessionTokensOut: Map<string, number>;
+  sessionCacheRead: Map<string, number>;
+  sessionCacheCreation: Map<string, number>;
+
   // Pending permissions per session (outer key = sessionId, inner key = request_id)
   pendingPermissions: Map<string, Map<string, PermissionRequest>>;
 
@@ -76,6 +82,7 @@ interface AppState {
   updateLastAssistantMessage: (sessionId: string, updater: (msg: ChatMessage) => ChatMessage) => void;
   setStreaming: (sessionId: string, text: string | null) => void;
   setStreamingStats: (sessionId: string, stats: { startedAt?: number; outputTokens?: number } | null) => void;
+  accumulateTokens: (sessionId: string, usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens: number; cache_creation_input_tokens: number }) => void;
 
   // Permission actions
   addPermission: (sessionId: string, perm: PermissionRequest) => void;
@@ -146,6 +153,10 @@ export const useStore = create<AppState>((set) => ({
   streaming: new Map(),
   streamingStartedAt: new Map(),
   streamingOutputTokens: new Map(),
+  sessionTokensIn: new Map(),
+  sessionTokensOut: new Map(),
+  sessionCacheRead: new Map(),
+  sessionCacheCreation: new Map(),
   pendingPermissions: new Map(),
   connectionStatus: new Map(),
   cliConnected: new Map(),
@@ -221,6 +232,14 @@ export const useStore = create<AppState>((set) => ({
       streamingStartedAt.delete(sessionId);
       const streamingOutputTokens = new Map(s.streamingOutputTokens);
       streamingOutputTokens.delete(sessionId);
+      const sessionTokensIn = new Map(s.sessionTokensIn);
+      sessionTokensIn.delete(sessionId);
+      const sessionTokensOut = new Map(s.sessionTokensOut);
+      sessionTokensOut.delete(sessionId);
+      const sessionCacheRead = new Map(s.sessionCacheRead);
+      sessionCacheRead.delete(sessionId);
+      const sessionCacheCreation = new Map(s.sessionCacheCreation);
+      sessionCacheCreation.delete(sessionId);
       const connectionStatus = new Map(s.connectionStatus);
       connectionStatus.delete(sessionId);
       const cliConnected = new Map(s.cliConnected);
@@ -255,6 +274,10 @@ export const useStore = create<AppState>((set) => ({
         streaming,
         streamingStartedAt,
         streamingOutputTokens,
+        sessionTokensIn,
+        sessionTokensOut,
+        sessionCacheRead,
+        sessionCacheCreation,
         connectionStatus,
         cliConnected,
         sessionStatus,
@@ -326,6 +349,19 @@ export const useStore = create<AppState>((set) => ({
         if (stats.outputTokens !== undefined) streamingOutputTokens.set(sessionId, stats.outputTokens);
       }
       return { streamingStartedAt, streamingOutputTokens };
+    }),
+
+  accumulateTokens: (sessionId, usage) =>
+    set((s) => {
+      const tokensIn = new Map(s.sessionTokensIn);
+      const tokensOut = new Map(s.sessionTokensOut);
+      const cacheRead = new Map(s.sessionCacheRead);
+      const cacheCreation = new Map(s.sessionCacheCreation);
+      tokensIn.set(sessionId, (tokensIn.get(sessionId) ?? 0) + usage.input_tokens);
+      tokensOut.set(sessionId, (tokensOut.get(sessionId) ?? 0) + usage.output_tokens);
+      cacheRead.set(sessionId, (cacheRead.get(sessionId) ?? 0) + usage.cache_read_input_tokens);
+      cacheCreation.set(sessionId, (cacheCreation.get(sessionId) ?? 0) + usage.cache_creation_input_tokens);
+      return { sessionTokensIn: tokensIn, sessionTokensOut: tokensOut, sessionCacheRead: cacheRead, sessionCacheCreation: cacheCreation };
     }),
 
   addPermission: (sessionId, perm) =>
@@ -502,6 +538,10 @@ export const useStore = create<AppState>((set) => ({
       streaming: new Map(),
       streamingStartedAt: new Map(),
       streamingOutputTokens: new Map(),
+      sessionTokensIn: new Map(),
+      sessionTokensOut: new Map(),
+      sessionCacheRead: new Map(),
+      sessionCacheCreation: new Map(),
       pendingPermissions: new Map(),
       connectionStatus: new Map(),
       cliConnected: new Map(),

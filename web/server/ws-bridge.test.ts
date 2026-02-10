@@ -560,7 +560,7 @@ describe("CLI message routing", () => {
     expect(resultBroadcast.data._computed.total_lines_removed).toBe(10);
   });
 
-  it("result: computes context_used_percent from modelUsage", () => {
+  it("result: computes context_used_percent from last API call usage", () => {
     const msg = JSON.stringify({
       type: "result",
       subtype: "success",
@@ -570,12 +570,14 @@ describe("CLI message routing", () => {
       num_turns: 1,
       total_cost_usd: 0.02,
       stop_reason: "end_turn",
-      usage: { input_tokens: 500, output_tokens: 200, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+      // usage = last API call (actual context fill): 2000 input + 8000 cache_read = 10000
+      usage: { input_tokens: 2000, output_tokens: 200, cache_creation_input_tokens: 0, cache_read_input_tokens: 8000 },
+      // modelUsage = accumulated across all API calls in the turn (NOT used for context %)
       modelUsage: {
         "claude-sonnet-4-5-20250929": {
-          inputTokens: 8000,
-          outputTokens: 2000,
-          cacheReadInputTokens: 0,
+          inputTokens: 16000,
+          outputTokens: 4000,
+          cacheReadInputTokens: 24000,
           cacheCreationInputTokens: 0,
           contextWindow: 200000,
           maxOutputTokens: 16384,
@@ -589,7 +591,7 @@ describe("CLI message routing", () => {
     bridge.handleCLIMessage(cli, msg);
 
     const state = bridge.getSession("s1")!.state;
-    // (8000 + 2000) / 200000 * 100 = 5
+    // Context % uses usage (last call): (2000 + 8000) / 200000 * 100 = 5
     expect(state.context_used_percent).toBe(5);
 
     // Verify broadcast includes _computed with context_used_percent

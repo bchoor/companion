@@ -462,6 +462,7 @@ export class WsBridge {
   }
 
   private handleResultMessage(session: Session, msg: CLIResultMessage) {
+    console.log("[DEBUG result] handleResultMessage called, keys:", Object.keys(msg), "has usage:", !!msg.usage, "has modelUsage:", !!msg.modelUsage);
     // Update session cost/turns
     session.state.total_cost_usd = msg.total_cost_usd;
     session.state.num_turns = msg.num_turns;
@@ -474,13 +475,16 @@ export class WsBridge {
       session.state.total_lines_removed = msg.total_lines_removed;
     }
 
-    // Compute context usage from modelUsage
-    if (msg.modelUsage) {
-      for (const usage of Object.values(msg.modelUsage)) {
-        if (usage.contextWindow > 0) {
-          session.state.context_used_percent = Math.round(
-            ((usage.inputTokens + usage.outputTokens) / usage.contextWindow) * 100
-          );
+    // Compute context usage from last API call's input tokens (usage field).
+    // modelUsage is accumulated across all API calls in the turn — can exceed contextWindow.
+    // usage reflects the last call only, which represents actual context fill.
+    if (msg.usage && msg.modelUsage) {
+      for (const [model, modelStats] of Object.entries(msg.modelUsage)) {
+        if (modelStats.contextWindow > 0) {
+          const currentContextTokens = msg.usage.input_tokens + msg.usage.cache_read_input_tokens + msg.usage.cache_creation_input_tokens;
+          const pct = Math.round((currentContextTokens / modelStats.contextWindow) * 100);
+          session.state.context_used_percent = pct;
+          break;
         }
       }
     }

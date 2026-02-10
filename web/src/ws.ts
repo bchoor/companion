@@ -220,12 +220,14 @@ function handleMessage(sessionId: string, event: MessageEvent) {
         if (typeof r.total_lines_removed === "number") {
           sessionUpdates.total_lines_removed = r.total_lines_removed;
         }
-        if (r.modelUsage) {
-          for (const usage of Object.values(r.modelUsage)) {
-            if (usage.contextWindow > 0) {
+        if (r.usage && r.modelUsage) {
+          for (const modelStats of Object.values(r.modelUsage)) {
+            if (modelStats.contextWindow > 0) {
+              const currentContextTokens = r.usage.input_tokens + r.usage.cache_read_input_tokens + r.usage.cache_creation_input_tokens;
               sessionUpdates.context_used_percent = Math.round(
-                ((usage.inputTokens + usage.outputTokens) / usage.contextWindow) * 100
+                (currentContextTokens / modelStats.contextWindow) * 100
               );
+              break;
             }
           }
         }

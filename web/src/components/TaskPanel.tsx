@@ -1,18 +1,17 @@
 import { useStore } from "../store.js";
 import type { TaskItem } from "../types.js";
+import { SessionStats } from "./SessionStats.js";
 
 const EMPTY_TASKS: TaskItem[] = [];
 
 export function TaskPanel({ sessionId }: { sessionId: string }) {
   const tasks = useStore((s) => s.sessionTasks.get(sessionId) || EMPTY_TASKS);
-  const session = useStore((s) => s.sessions.get(sessionId));
   const taskPanelOpen = useStore((s) => s.taskPanelOpen);
   const setTaskPanelOpen = useStore((s) => s.setTaskPanelOpen);
 
   if (!taskPanelOpen) return null;
 
   const completedCount = tasks.filter((t) => t.status === "completed").length;
-  const contextPct = session?.context_used_percent ?? 0;
 
   return (
     <aside className="w-[280px] h-full flex flex-col bg-cc-card border-l border-cc-border">
@@ -30,47 +29,7 @@ export function TaskPanel({ sessionId }: { sessionId: string }) {
       </div>
 
       {/* Session stats */}
-      {session && (
-        <div className="shrink-0 px-4 py-3 border-b border-cc-border space-y-2.5">
-          {/* Cost */}
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-cc-muted uppercase tracking-wider">Cost</span>
-            <span className="text-[13px] font-medium text-cc-fg tabular-nums">
-              ${session.total_cost_usd.toFixed(2)}
-            </span>
-          </div>
-
-          {/* Context usage */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-cc-muted uppercase tracking-wider">Context</span>
-              <span className="text-[11px] text-cc-muted tabular-nums">
-                {contextPct > 0 ? `${contextPct}%` : "--"}
-              </span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-cc-hover overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  contextPct > 80
-                    ? "bg-cc-error"
-                    : contextPct > 50
-                    ? "bg-cc-warning"
-                    : "bg-cc-primary"
-                }`}
-                style={{ width: `${Math.min(contextPct, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Turns */}
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-cc-muted uppercase tracking-wider">Turns</span>
-            <span className="text-[13px] font-medium text-cc-fg tabular-nums">
-              {session.num_turns}
-            </span>
-          </div>
-        </div>
-      )}
+      <SessionStats sessionId={sessionId} />
 
       {/* Task section header */}
       <div className="shrink-0 px-4 py-2.5 border-b border-cc-border flex items-center justify-between">
