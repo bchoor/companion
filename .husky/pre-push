@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+REMOTE_URL=$(git remote get-url "$1" 2>/dev/null || echo "$2")
+if echo "$REMOTE_URL" | grep -qi "The-Vibe-Company"; then
+  echo "BLOCKED: Push to upstream (The-Vibe-Company) is not allowed."
+  echo "Use 'git push origin' to push to your fork."
+  exit 1
+fi

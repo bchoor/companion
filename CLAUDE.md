@@ -87,10 +87,16 @@ Sessions persist to disk (`$TMPDIR/vibe-sessions/`) and survive server restarts.
 
 Always use `agent-browser` CLI command to explore the browser. Never use playwright or other browser automation libraries.
 
+## Git & GitHub Safety
+
+- **NEVER interact with upstream repos** (e.g., The-Vibe-Company org) — no pushing, no PRs, no comments, no issue edits. All `gh` commands target the user's fork only.
+- Before any `gh pr` or `gh issue` command, verify the repo owner matches `bchoor` — not an upstream org.
+- Default target for PRs is the user's fork — never assume upstream.
+
 ## Pull Requests
 
 When submitting a pull request:
 - use commitzen to format the commit message and the PR title
 - Add a screenshot of the changes in the PR description if its a visual change
 - Explain simply what the PR does and why it's needed
-- Tell me if the code was reviewed by a human or simply generated directly by an AI. 
+- Tell me if the code was reviewed by a human or simply generated directly by an AI.

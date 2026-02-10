@@ -18,6 +18,7 @@ const mockApi = {
   deleteSession: vi.fn().mockResolvedValue({}),
   archiveSession: vi.fn().mockResolvedValue({}),
   unarchiveSession: vi.fn().mockResolvedValue({}),
+  listProjects: vi.fn().mockResolvedValue([]),
 };
 
 vi.mock("../api.js", () => ({
@@ -26,6 +27,7 @@ vi.mock("../api.js", () => ({
     deleteSession: (...args: unknown[]) => mockApi.deleteSession(...args),
     archiveSession: (...args: unknown[]) => mockApi.archiveSession(...args),
     unarchiveSession: (...args: unknown[]) => mockApi.unarchiveSession(...args),
+    listProjects: (...args: unknown[]) => mockApi.listProjects(...args),
   },
 }));
 
@@ -49,6 +51,8 @@ interface MockStoreState {
   sessionNames: Map<string, string>;
   recentlyRenamed: Set<string>;
   pendingPermissions: Map<string, Map<string, unknown>>;
+  collapsedProjects: Set<string>;
+  projectNames: Map<string, string>;
   setCurrentSession: ReturnType<typeof vi.fn>;
   toggleDarkMode: ReturnType<typeof vi.fn>;
   removeSession: ReturnType<typeof vi.fn>;
@@ -58,6 +62,9 @@ interface MockStoreState {
   markRecentlyRenamed: ReturnType<typeof vi.fn>;
   clearRecentlyRenamed: ReturnType<typeof vi.fn>;
   setSdkSessions: ReturnType<typeof vi.fn>;
+  toggleProjectCollapsed: ReturnType<typeof vi.fn>;
+  setProjectName: ReturnType<typeof vi.fn>;
+  setProjectNames: ReturnType<typeof vi.fn>;
 }
 
 function makeSession(id: string, overrides: Partial<SessionState> = {}): SessionState {
@@ -111,6 +118,8 @@ function createMockState(overrides: Partial<MockStoreState> = {}): MockStoreStat
     sessionNames: new Map(),
     recentlyRenamed: new Set(),
     pendingPermissions: new Map(),
+    collapsedProjects: new Set(),
+    projectNames: new Map(),
     setCurrentSession: vi.fn(),
     toggleDarkMode: vi.fn(),
     removeSession: vi.fn(),
@@ -120,6 +129,9 @@ function createMockState(overrides: Partial<MockStoreState> = {}): MockStoreStat
     markRecentlyRenamed: vi.fn(),
     clearRecentlyRenamed: vi.fn(),
     setSdkSessions: vi.fn(),
+    toggleProjectCollapsed: vi.fn(),
+    setProjectName: vi.fn(),
+    setProjectNames: vi.fn(),
     ...overrides,
   };
 }
