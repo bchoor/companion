@@ -39,6 +39,8 @@ interface AppState {
 
   // Session display names
   sessionNames: Map<string, string>;
+  // Track sessions that were just renamed (for animation)
+  recentlyRenamed: Set<string>;
 
   // Project grouping
   collapsedProjects: Set<string>;
@@ -90,6 +92,8 @@ interface AppState {
 
   // Session name actions
   setSessionName: (sessionId: string, name: string) => void;
+  markRecentlyRenamed: (sessionId: string) => void;
+  clearRecentlyRenamed: (sessionId: string) => void;
 
   // Project actions
   toggleProjectCollapsed: (key: string) => void;
@@ -150,6 +154,7 @@ export const useStore = create<AppState>((set) => ({
   sessionTasks: new Map(),
   changedFiles: new Map(),
   sessionNames: getInitialSessionNames(),
+  recentlyRenamed: new Set(),
   collapsedProjects: new Set(),
   projectNames: new Map(),
   darkMode: getInitialDarkMode(),
@@ -232,6 +237,8 @@ export const useStore = create<AppState>((set) => ({
       changedFiles.delete(sessionId);
       const sessionNames = new Map(s.sessionNames);
       sessionNames.delete(sessionId);
+      const recentlyRenamed = new Set(s.recentlyRenamed);
+      recentlyRenamed.delete(sessionId);
       const editorOpenFile = new Map(s.editorOpenFile);
       editorOpenFile.delete(sessionId);
       const editorUrl = new Map(s.editorUrl);
@@ -256,6 +263,7 @@ export const useStore = create<AppState>((set) => ({
         sessionTasks,
         changedFiles,
         sessionNames,
+        recentlyRenamed,
         editorOpenFile,
         editorUrl,
         editorLoading,
@@ -393,6 +401,20 @@ export const useStore = create<AppState>((set) => ({
       return { sessionNames };
     }),
 
+  markRecentlyRenamed: (sessionId) =>
+    set((s) => {
+      const recentlyRenamed = new Set(s.recentlyRenamed);
+      recentlyRenamed.add(sessionId);
+      return { recentlyRenamed };
+    }),
+
+  clearRecentlyRenamed: (sessionId) =>
+    set((s) => {
+      const recentlyRenamed = new Set(s.recentlyRenamed);
+      recentlyRenamed.delete(sessionId);
+      return { recentlyRenamed };
+    }),
+
   toggleProjectCollapsed: (key) => {
     set((s) => {
       const next = new Set(s.collapsedProjects);
@@ -488,6 +510,9 @@ export const useStore = create<AppState>((set) => ({
       sessionTasks: new Map(),
       changedFiles: new Map(),
       sessionNames: new Map(),
+      recentlyRenamed: new Set(),
+      collapsedProjects: new Set(),
+      projectNames: new Map(),
       activeTab: "chat" as const,
       editorOpenFile: new Map(),
       editorUrl: new Map(),

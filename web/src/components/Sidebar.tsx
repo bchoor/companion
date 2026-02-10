@@ -24,6 +24,9 @@ export function Sidebar() {
   const sessionStatus = useStore((s) => s.sessionStatus);
   const removeSession = useStore((s) => s.removeSession);
   const sessionNames = useStore((s) => s.sessionNames);
+  const recentlyRenamed = useStore((s) => s.recentlyRenamed);
+  const markRecentlyRenamed = useStore((s) => s.markRecentlyRenamed);
+  const clearRecentlyRenamed = useStore((s) => s.clearRecentlyRenamed);
   const pendingPermissions = useStore((s) => s.pendingPermissions);
   const collapsedProjects = useStore((s) => s.collapsedProjects);
   const toggleProjectCollapsed = useStore((s) => s.toggleProjectCollapsed);
@@ -42,7 +45,14 @@ export function Sidebar() {
           const store = useStore.getState();
           for (const s of list) {
             if (s.name && (!store.sessionNames.has(s.sessionId) || /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(store.sessionNames.get(s.sessionId)!))) {
-              store.setSessionName(s.sessionId, s.name);
+              const currentStoreName = store.sessionNames.get(s.sessionId);
+              const hadRandomName = !!currentStoreName && /^[A-Z][a-z]+ [A-Z][a-z]+$/.test(currentStoreName);
+              if (currentStoreName !== s.name) {
+                store.setSessionName(s.sessionId, s.name);
+                if (hadRandomName) {
+                  store.markRecentlyRenamed(s.sessionId);
+                }
+              }
             }
           }
         }
@@ -242,6 +252,7 @@ export function Sidebar() {
         editingName={editingName}
         permCount={permCount}
         isArchived={archived}
+        recentlyRenamed={recentlyRenamed.has(s.id)}
         onSelect={() => handleSelectSession(s.id)}
         onStartRename={(currentName) => {
           setEditingSessionId(s.id);

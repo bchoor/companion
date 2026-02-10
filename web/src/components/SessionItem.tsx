@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { useStore } from "../store.js";
 
 interface SessionItemProps {
   session: {
@@ -24,6 +25,7 @@ interface SessionItemProps {
   editingName: string;
   permCount: number;
   isArchived?: boolean;
+  recentlyRenamed?: boolean;
   onSelect: () => void;
   onStartRename: (name: string) => void;
   onCancelRename: () => void;
@@ -42,6 +44,7 @@ export function SessionItem({
   editingName,
   permCount,
   isArchived,
+  recentlyRenamed,
   onSelect,
   onStartRename,
   onCancelRename,
@@ -52,6 +55,7 @@ export function SessionItem({
   onDelete,
 }: SessionItemProps) {
   const editInputRef = useRef<HTMLInputElement>(null);
+  const clearRecentlyRenamed = useStore((state) => state.clearRecentlyRenamed);
 
   const shortId = s.id.slice(0, 8);
   const label = sessionName || s.model || shortId;
@@ -106,6 +110,9 @@ export function SessionItem({
                 {!archived && permCount > 0 && (
                   <span className="absolute inset-0 w-2 h-2 rounded-full bg-cc-warning/40 animate-[pulse-dot_1.5s_ease-in-out_infinite]" />
                 )}
+                {!archived && permCount === 0 && isRunning && s.isConnected && (
+                  <span className="absolute inset-0 w-2 h-2 rounded-full bg-cc-success/40 animate-[pulse-dot_1.5s_ease-in-out_infinite]" />
+                )}
               </>
             )}
           </span>
@@ -130,7 +137,10 @@ export function SessionItem({
               className="text-[13px] font-medium flex-1 text-cc-fg bg-transparent border border-cc-border rounded-md px-1 py-0 outline-none focus:border-cc-primary/50 min-w-0"
             />
           ) : (
-            <span className="text-[13px] font-medium truncate flex-1 text-cc-fg">
+            <span
+              className={`text-[13px] font-medium truncate flex-1 text-cc-fg ${recentlyRenamed ? "animate-name-appear" : ""}`}
+              onAnimationEnd={() => clearRecentlyRenamed(s.id)}
+            >
               {label}
             </span>
           )}

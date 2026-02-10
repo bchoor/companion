@@ -49,6 +49,7 @@ interface MockStoreState {
   cliConnected: Map<string, boolean>;
   sessionStatus: Map<string, "idle" | "running" | "compacting" | null>;
   sessionNames: Map<string, string>;
+  recentlyRenamed: Set<string>;
   pendingPermissions: Map<string, Map<string, unknown>>;
   collapsedProjects: Set<string>;
   projectNames: Map<string, string>;
@@ -58,6 +59,8 @@ interface MockStoreState {
   newSession: ReturnType<typeof vi.fn>;
   setSidebarOpen: ReturnType<typeof vi.fn>;
   setSessionName: ReturnType<typeof vi.fn>;
+  markRecentlyRenamed: ReturnType<typeof vi.fn>;
+  clearRecentlyRenamed: ReturnType<typeof vi.fn>;
   setSdkSessions: ReturnType<typeof vi.fn>;
   toggleProjectCollapsed: ReturnType<typeof vi.fn>;
   setProjectName: ReturnType<typeof vi.fn>;
@@ -113,6 +116,7 @@ function createMockState(overrides: Partial<MockStoreState> = {}): MockStoreStat
     cliConnected: new Map(),
     sessionStatus: new Map(),
     sessionNames: new Map(),
+    recentlyRenamed: new Set(),
     pendingPermissions: new Map(),
     collapsedProjects: new Set(),
     projectNames: new Map(),
@@ -122,6 +126,8 @@ function createMockState(overrides: Partial<MockStoreState> = {}): MockStoreStat
     newSession: vi.fn(),
     setSidebarOpen: vi.fn(),
     setSessionName: vi.fn(),
+    markRecentlyRenamed: vi.fn(),
+    clearRecentlyRenamed: vi.fn(),
     setSdkSessions: vi.fn(),
     toggleProjectCollapsed: vi.fn(),
     setProjectName: vi.fn(),
@@ -386,6 +392,72 @@ describe("Sidebar", () => {
     fireEvent.click(darkModeButton);
 
     expect(mockState.toggleDarkMode).toHaveBeenCalled();
+  });
+
+  it("session name shows animate-name-appear class when recently renamed", () => {
+    const session = makeSession("s1");
+    const sdk = makeSdkSession("s1");
+    mockState = createMockState({
+      sessions: new Map([["s1", session]]),
+      sdkSessions: [sdk],
+      sessionNames: new Map([["s1", "Auto Generated Title"]]),
+      recentlyRenamed: new Set(["s1"]),
+    });
+
+    render(<Sidebar />);
+    const nameElement = screen.getByText("Auto Generated Title");
+    expect(nameElement.className).toContain("animate-name-appear");
+  });
+
+  it("session name does NOT have animate-name-appear when not recently renamed", () => {
+    const session = makeSession("s1");
+    const sdk = makeSdkSession("s1");
+    mockState = createMockState({
+      sessions: new Map([["s1", session]]),
+      sdkSessions: [sdk],
+      sessionNames: new Map([["s1", "Regular Name"]]),
+      recentlyRenamed: new Set(), // not recently renamed
+    });
+
+    render(<Sidebar />);
+    const nameElement = screen.getByText("Regular Name");
+    expect(nameElement.className).not.toContain("animate-name-appear");
+  });
+
+  it("calls clearRecentlyRenamed on animation end", () => {
+    const session = makeSession("s1");
+    const sdk = makeSdkSession("s1");
+    mockState = createMockState({
+      sessions: new Map([["s1", session]]),
+      sdkSessions: [sdk],
+      sessionNames: new Map([["s1", "Animated Name"]]),
+      recentlyRenamed: new Set(["s1"]),
+    });
+
+    render(<Sidebar />);
+    const nameElement = screen.getByText("Animated Name");
+    fireEvent.animationEnd(nameElement);
+    expect(mockState.clearRecentlyRenamed).toHaveBeenCalledWith("s1");
+  });
+
+  it("animation class applies only to the recently renamed session, not others", () => {
+    const session1 = makeSession("s1");
+    const session2 = makeSession("s2");
+    const sdk1 = makeSdkSession("s1");
+    const sdk2 = makeSdkSession("s2");
+    mockState = createMockState({
+      sessions: new Map([["s1", session1], ["s2", session2]]),
+      sdkSessions: [sdk1, sdk2],
+      sessionNames: new Map([["s1", "Renamed Session"], ["s2", "Other Session"]]),
+      recentlyRenamed: new Set(["s1"]), // only s1 was renamed
+    });
+
+    render(<Sidebar />);
+    const renamedElement = screen.getByText("Renamed Session");
+    const otherElement = screen.getByText("Other Session");
+
+    expect(renamedElement.className).toContain("animate-name-appear");
+    expect(otherElement.className).not.toContain("animate-name-appear");
   });
 
   it("permission badge shows count for sessions with pending permissions", () => {

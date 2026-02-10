@@ -22,7 +22,7 @@ export function TopBar() {
     : "";
 
   return (
-    <header className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-cc-card border-b border-cc-border">
+    <header className="shrink-0 flex items-center justify-between px-2 sm:px-4 py-2 sm:py-2.5 bg-cc-card border-b border-cc-border">
       <div className="flex items-center gap-3">
         {/* Sidebar toggle */}
         <button
@@ -65,7 +65,7 @@ export function TopBar() {
 
       {/* Right side */}
       {currentSessionId && (
-        <div className="flex items-center gap-3 text-[12px] text-cc-muted">
+        <div className="flex items-center gap-2 sm:gap-3 text-[12px] text-cc-muted">
           {status === "compacting" && (
             <span className="text-cc-warning font-medium animate-pulse">Compacting...</span>
           )}
