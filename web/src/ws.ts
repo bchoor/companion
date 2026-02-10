@@ -201,28 +201,40 @@ function handleMessage(sessionId: string, event: MessageEvent) {
 
     case "result": {
       const r = data.data;
+      const computed = r._computed;
       const sessionUpdates: Partial<{ total_cost_usd: number; num_turns: number; context_used_percent: number; total_lines_added: number; total_lines_removed: number }> = {
         total_cost_usd: r.total_cost_usd,
         num_turns: r.num_turns,
       };
-      // Forward lines changed if present
-      if (typeof r.total_lines_added === "number") {
-        sessionUpdates.total_lines_added = r.total_lines_added;
-      }
-      if (typeof r.total_lines_removed === "number") {
-        sessionUpdates.total_lines_removed = r.total_lines_removed;
-      }
-      // Compute context % from modelUsage if available
-      if (r.modelUsage) {
-        for (const usage of Object.values(r.modelUsage)) {
-          if (usage.contextWindow > 0) {
-            sessionUpdates.context_used_percent = Math.round(
-              ((usage.inputTokens + usage.outputTokens) / usage.contextWindow) * 100
-            );
+
+      // Use backend-computed values (always present when server supports it)
+      if (computed) {
+        sessionUpdates.context_used_percent = computed.context_used_percent;
+        sessionUpdates.total_lines_added = computed.total_lines_added;
+        sessionUpdates.total_lines_removed = computed.total_lines_removed;
+      } else {
+        // Fallback: compute from raw CLI fields (backward compat)
+        if (typeof r.total_lines_added === "number") {
+          sessionUpdates.total_lines_added = r.total_lines_added;
+        }
+        if (typeof r.total_lines_removed === "number") {
+          sessionUpdates.total_lines_removed = r.total_lines_removed;
+        }
+        if (r.modelUsage) {
+          for (const usage of Object.values(r.modelUsage)) {
+            if (usage.contextWindow > 0) {
+              sessionUpdates.context_used_percent = Math.round(
+                ((usage.inputTokens + usage.outputTokens) / usage.contextWindow) * 100
+              );
+            }
           }
         }
       }
       store.updateSession(sessionId, sessionUpdates);
+      // Accumulate token counts for session stats
+      if (r.usage) {
+        store.accumulateTokens(sessionId, r.usage);
+      }
       store.setStreaming(sessionId, null);
       store.setStreamingStats(sessionId, null);
       store.setSessionStatus(sessionId, "idle");

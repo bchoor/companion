@@ -552,6 +552,12 @@ describe("CLI message routing", () => {
     const resultBroadcast = calls.find((c: any) => c.type === "result");
     expect(resultBroadcast).toBeDefined();
     expect(resultBroadcast.data.total_cost_usd).toBe(0.05);
+
+    // Verify _computed field is injected
+    expect(resultBroadcast.data._computed).toBeDefined();
+    expect(resultBroadcast.data._computed.context_used_percent).toBe(0);
+    expect(resultBroadcast.data._computed.total_lines_added).toBe(42);
+    expect(resultBroadcast.data._computed.total_lines_removed).toBe(10);
   });
 
   it("result: computes context_used_percent from modelUsage", () => {
@@ -585,6 +591,15 @@ describe("CLI message routing", () => {
     const state = bridge.getSession("s1")!.state;
     // (8000 + 2000) / 200000 * 100 = 5
     expect(state.context_used_percent).toBe(5);
+
+    // Verify broadcast includes _computed with context_used_percent
+    const calls = browser.send.mock.calls.map(([arg]: [string]) => JSON.parse(arg));
+    const resultBroadcast = calls.find((c: any) => c.type === "result");
+    expect(resultBroadcast).toBeDefined();
+    expect(resultBroadcast.data._computed).toBeDefined();
+    expect(resultBroadcast.data._computed.context_used_percent).toBe(5);
+    expect(resultBroadcast.data._computed.total_lines_added).toBe(0);
+    expect(resultBroadcast.data._computed.total_lines_removed).toBe(0);
   });
 
   it("stream_event: broadcasts without storing", () => {

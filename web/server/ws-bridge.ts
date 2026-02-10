@@ -487,7 +487,14 @@ export class WsBridge {
 
     const browserMsg: BrowserIncomingMessage = {
       type: "result",
-      data: msg,
+      data: {
+        ...msg,
+        _computed: {
+          context_used_percent: session.state.context_used_percent,
+          total_lines_added: session.state.total_lines_added,
+          total_lines_removed: session.state.total_lines_removed,
+        },
+      },
     };
     session.messageHistory.push(browserMsg);
     this.broadcastToBrowsers(session, browserMsg);

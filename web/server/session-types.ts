@@ -79,6 +79,12 @@ export interface CLIResultMessage {
   }>;
   total_lines_added?: number;
   total_lines_removed?: number;
+  /** Injected by ws-bridge when broadcasting to browsers */
+  _computed?: {
+    context_used_percent: number;
+    total_lines_added: number;
+    total_lines_removed: number;
+  };
   uuid: string;
   session_id: string;
 }
